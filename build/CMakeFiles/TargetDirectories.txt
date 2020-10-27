@@ -1,0 +1,11 @@
+/terraForce/UTD/cs6378/cs6378_project1/build/CMakeFiles/rebuild_cache.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/CMakeFiles/edit_cache.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/include/CMakeFiles/rebuild_cache.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/include/CMakeFiles/LibZ.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/include/CMakeFiles/edit_cache.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/origin/CMakeFiles/rebuild_cache.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/origin/CMakeFiles/origin.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/origin/CMakeFiles/edit_cache.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/unit/CMakeFiles/rebuild_cache.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/unit/CMakeFiles/unit.dir
+/terraForce/UTD/cs6378/cs6378_project1/build/unit/CMakeFiles/edit_cache.dir

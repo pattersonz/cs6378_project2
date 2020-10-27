@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/terraForce/UTD/cs6378/cs6378_project1/include/vecLib.c
+vecLib.h
+/terraForce/UTD/cs6378/cs6378_project1/include/vecLib.h
+
+/terraForce/UTD/cs6378/cs6378_project1/include/vecLib.h
+stdlib.h
+-
+
