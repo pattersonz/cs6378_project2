@@ -1,2 +1,0 @@
-/usr/bin/ar qc libLibZ.a  CMakeFiles/LibZ.dir/vecLib.o
-/usr/bin/ranlib libLibZ.a

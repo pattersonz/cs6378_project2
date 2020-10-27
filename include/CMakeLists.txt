@@ -1,3 +1,4 @@
 add_library(LibZ
   unitStructs.h
-  vecLib.c vecLib.h)
+  vecLib.c vecLib.h
+  parserLib.h)

@@ -1,1 +1,0 @@
-/usr/bin/cc -pthread -g  -rdynamic CMakeFiles/origin.dir/origin.o  -o origin ../include/libLibZ.a 

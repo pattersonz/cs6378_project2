@@ -1,1 +1,0 @@
-/usr/bin/cc -pthread -g  -rdynamic CMakeFiles/unit.dir/unit.o  -o unit ../include/libLibZ.a 

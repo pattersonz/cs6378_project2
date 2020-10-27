@@ -93,7 +93,7 @@ void parseStr(FILE* file,char**str,int*size)
 	  }
 	  if (x == EOF)
 	  {
-		*src = 0;
+		*str = 0;
 		*size = 0;
 		return;
 	  }

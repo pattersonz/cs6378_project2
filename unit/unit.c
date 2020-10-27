@@ -14,7 +14,7 @@
 #include "vecLib.h"
 #include "unitStructs.h"
 
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
+#define MAX_(x,y) ((x) > (y) ? (x) : (y))
 
 us thisId; //the id associated with this process.
 us nCount; //number of neighbors
@@ -22,7 +22,7 @@ us thisPort; //port this process is listening on
 NEIGHBOR* ns; //array of neighbors
 us foundNum; //number of found processes
 us curRound; //current round of the processes
-us clock; //current clock value
+us thisClock; //current clock value
 us delay; //average delay time
 us exe; //average execution time
 us reqClock; //clock at time of request
@@ -148,7 +148,7 @@ void *contactOrigin(void* ptr)
   ns = (NEIGHBOR*)malloc(nCount*sizeof(NEIGHBOR));
   delay = o.delayTime;
   exe = o.exeTime;
-  clock = 0;
+  thisClock = 0;
   us reqs = o.reqs;
   unsigned i;
   for (i = 0; i < nCount; ++i)
@@ -182,8 +182,8 @@ void *contactOrigin(void* ptr)
 	attemptingEntry = 1;
 	msg = serialize_char_ptr(msg,"Requesting",10);
 	pthread_mutex_lock(&clockLock);
-	msg = serialize_u_short(msg,clock);
-	reqClock = clock;
+	msg = serialize_u_short(msg,thisClock);
+	reqClock = thisClock;
 	pthread_mutex_unlock(&clockLock);
 	msg = serialize_u_short(msg,thisId);
 	send(new_socket , buf , 1024, 0 );
@@ -191,7 +191,7 @@ void *contactOrigin(void* ptr)
 	msg = buf;
 	msg = serialize_char_ptr(msg,"Entering",8);
 	pthread_mutex_lock(&clockLock);
-	msg = serialize_u_short(msg,clock);
+	msg = serialize_u_short(msg,thisClock);
 	pthread_mutex_unlock(&clockLock);
 	msg = serialize_u_short(msg,thisId);
 	send(new_socket , buf , 1024, 0 );
@@ -200,7 +200,7 @@ void *contactOrigin(void* ptr)
 	msg = buf;
 	msg = serialize_char_ptr(msg,"Exiting",7);
 	pthread_mutex_lock(&clockLock);
-	msg = serialize_u_short(msg,clock);
+	msg = serialize_u_short(msg,thisClock);
 	pthread_mutex_unlock(&clockLock);
 	msg = serialize_u_short(msg,thisId);
 	send(new_socket , buf , 1024, 0 );
@@ -215,7 +215,7 @@ void *contactOrigin(void* ptr)
   byte * msg = buf;
   msg = serialize_char_ptr(msg,"Complete",8);
   pthread_mutex_lock(&clockLock);
-  msg = serialize_u_short(msg,clock);
+  msg = serialize_u_short(msg,thisClock);
   pthread_mutex_unlock(&clockLock);
   msg = serialize_u_short(msg,thisId);
   send(new_socket , buf , 1024, 0 );
@@ -267,7 +267,7 @@ void *requester(void *ptr)
 	ress = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
   }
-  while (true)
+  while (1)
   {
 	//make sure all procs are ready
 	pthread_barrier_wait(&syncer);
@@ -276,10 +276,10 @@ void *requester(void *ptr)
 	send(sock , buf , 1024, 0 );
 
 	pthread_mutex_lock(&clockLock);
-	clock = cloeck++;
+	thisClock++;
 	pthread_mutex_unlock(&clockLock);
 	
-	readTag = read(sock, buf, 1024);
+	int readTag = read(sock, buf, 1024);
 	if (readTag <= 0)
 	  break;
 //wait for all responses to be received
@@ -366,9 +366,10 @@ void *handleMsg(void* ptr)
 	  break;
 	UMSG u;
 	deserialize_UMSG(buf,&u);
-	msg = serialize_u_short(msg,clock);
+	byte* msg = buf;
+	msg = serialize_u_short(msg,thisClock);
 	pthread_mutex_lock(&clockLock);
-	clock = MAX(clock + 1, u.clock);
+	thisClock = MAX_(thisClock + 1, u.clock);
 	pthread_mutex_unlock(&clockLock);
 	
 	//if valid respond, else hold until CS section hit

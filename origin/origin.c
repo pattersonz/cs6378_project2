@@ -12,7 +12,7 @@
 #include <pthread.h>
 #include "unitStructs.h"
 #include "vecLib.h"
-#include "parseLib.h"
+#include "parserLib.h"
 
 PROC *procs; //array of processes
 us totalProcs = 0;//number of processes
@@ -20,7 +20,7 @@ us reqNum; //number of requests
 us exe; //average execution time
 us delay; //average delay time
 VEC *eccs; //vector holding return results
-pthread_mutex_t procLoc; //make sure two threads can't touch the vector
+pthread_mutex_t printLoc; //make sure two threads can't print at the same time
 
 /*
  * Fills the processes array with the information pulled out of the
@@ -56,8 +56,6 @@ void *contactProc(void* ptr)
 {
   unsigned index = (unsigned)ptr;
   PROC p = procs[index];
-  pthread_mutex_lock(&procLoc);
-  pthread_mutex_unlock(&procLoc);
   //setup socket connection
   int sock = 0; 
   struct sockaddr_in serv_addr; 
@@ -75,7 +73,7 @@ void *contactProc(void* ptr)
   // Convert IPv4 and IPv6 addresses from text to binary form
   char adr[17] = "xxxx.utdallas.edu";
   unsigned i;
-  memcpy(adr,p->mach,4);
+  memcpy(adr,p.mach,4);
   
   char *ip = NULL; 
   struct hostent *adrTrue; 
@@ -105,8 +103,8 @@ void *contactProc(void* ptr)
   
   //send neighbors
   OMSG o;
-  o.id = p->id;
-  o.port = p->port;
+  o.id = p.id;
+  o.port = p.port;
   o.nCount= totalProcs-1;
   o.neighbors = (char**)malloc(o.nCount*sizeof(char*));
   o.ports = (us*)malloc(o.nCount*sizeof(us));
@@ -135,8 +133,18 @@ void *contactProc(void* ptr)
   int complete = 0;
   while(!complete)
   {
+	byte* msg = buf;
+	char* message;
+	us clock;
+	us id;
 	read( sock , buf, 1024);
-	complete = true;
+	msg = deserialize_char_ptr(msg,&message);
+	msg = deserialize_u_short(msg,&clock);
+	msg = deserialize_u_short(msg,&id);
+	pthread_mutex_lock(&printLoc);
+	printf("id:%d clock:%d %s",id,clock,message);
+	pthread_mutex_unlock(&printLoc);
+	
   }
   //print results
   return (void*)0; 

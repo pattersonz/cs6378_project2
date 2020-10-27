@@ -66,8 +66,6 @@ void printProcs(unsigned count, PROC* p)
   for (i = 0; i < count; ++i)
   {
 	printf("proc:%d\n\tmachine:%s\n\tport:%d\n\tNeighbors:",p[i].id,p[i].mach,p[i].port);
-	for (j = 0; j < p[i].nCount; ++j)
-	  printf("%d ",p[i].neighbors[j]);
 	printf("\n");
   }
 }
@@ -75,7 +73,7 @@ void printProcs(unsigned count, PROC* p)
 //print an origin message
 void printOMSG(OMSG o)
 {
-  printf("id:%d port:%d neighbors:%d, N:%d\n", o.id, o.port, o.nCount, o.totalProc);
+  printf("id:%d port:%d neighbors:%d\n", o.id, o.port, o.nCount);
   unsigned i;
   for (i = 0; i < o.nCount; ++i)
   {
@@ -151,7 +149,7 @@ byte *serialize_OMSG(byte* buf, OMSG o)
   buf = serialize_u_short(buf,o.reqs);
   buf = serialize_u_short(buf,o.exeTime);
   buf = serialize_u_short(buf,o.delayTime);
-  buf return;
+  return buf;
 }
 
 byte *serialize_UMSG(byte* buf, UMSG u)
