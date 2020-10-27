@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <resolv.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "vecLib.h"
 #include "unitStructs.h"
 
@@ -27,6 +28,7 @@ us delay; //average delay time
 us exe; //average execution time
 us reqClock; //clock at time of request
 us attemptingEntry; //flag for identifying whether there is currently an attempt at the critical section
+us stillReqing; //whether or not we are still requesting the cs
 
 us responses; //the number of responses expected
 pthread_mutex_t resLock; //lock for editing number of responses
@@ -88,6 +90,8 @@ void randDelay(us x);
  */
 int main()
 {
+  time_t t;
+  srand((unsigned) time(&t));
   attemptingEntry = 0;
   pthread_t originThread;
   pthread_create(&originThread, NULL, &contactOrigin, NULL);
@@ -171,54 +175,66 @@ void *contactOrigin(void* ptr)
   pthread_barrier_init(&gotRes, NULL, nCount+1);
   pthread_barrier_init(&csDone, NULL, nCount+1); 
   
+  stillReqing = 1;
   for (i = 0; i < nCount; ++i)
 	pthread_create(&(threads[i]), NULL, &requester, (void*)&ns[i]);
 
+  char *data;
   while (reqs)
   {
-	attemptingEntry = 1;
 	byte * msg = buf;
   	randDelay(delay);
 	attemptingEntry = 1;
-	msg = serialize_char_ptr(msg,"Requesting",10);
+	data = "Requesting\0";
+	msg = serialize_char_ptr(msg,data,11);
 	pthread_mutex_lock(&clockLock);
 	msg = serialize_u_short(msg,thisClock);
 	reqClock = thisClock;
 	pthread_mutex_unlock(&clockLock);
 	msg = serialize_u_short(msg,thisId);
 	send(new_socket , buf , 1024, 0 );
+	read(new_socket, buf, 1024);
 	csEnter();
 	msg = buf;
-	msg = serialize_char_ptr(msg,"Entering",8);
+	data = "Entering  \0";
+	msg = serialize_char_ptr(msg,data,11);
 	pthread_mutex_lock(&clockLock);
 	msg = serialize_u_short(msg,thisClock);
 	pthread_mutex_unlock(&clockLock);
 	msg = serialize_u_short(msg,thisId);
 	send(new_socket , buf , 1024, 0 );
+	read(new_socket, buf, 1024);
 	randDelay(exe);
 	csLeave();
 	msg = buf;
-	msg = serialize_char_ptr(msg,"Exiting",7);
+	data = "Exiting   \0";
+	msg = serialize_char_ptr(msg,data,11);
 	pthread_mutex_lock(&clockLock);
 	msg = serialize_u_short(msg,thisClock);
 	pthread_mutex_unlock(&clockLock);
 	msg = serialize_u_short(msg,thisId);
 	send(new_socket , buf , 1024, 0 );
+	read(new_socket, buf, 1024);
 	reqs--;
 	attemptingEntry = 0;
+	printf("%d reqs:%d\n",thisId,reqs);
+	fflush(stdout);
   }
-  
+  stillReqing = 0;
+  pthread_barrier_wait(&syncer);
   for (i = 0; i < nCount; ++i)
 	pthread_join(threads[i],NULL);
   printf("Complete:%d\n",curRound);
   fflush(stdout);
   byte * msg = buf;
-  msg = serialize_char_ptr(msg,"Complete",8);
+  data = "Complete  \0";
+  msg = serialize_char_ptr(msg,data,11);
   pthread_mutex_lock(&clockLock);
   msg = serialize_u_short(msg,thisClock);
   pthread_mutex_unlock(&clockLock);
   msg = serialize_u_short(msg,thisId);
   send(new_socket , buf , 1024, 0 );
+  read(new_socket, buf, 1024);
   pthread_join(recT, NULL);
   return 0; 
 }
@@ -271,7 +287,8 @@ void *requester(void *ptr)
   {
 	//make sure all procs are ready
 	pthread_barrier_wait(&syncer);
-
+	if (!stillReqing)
+	  break;
 	serialize_u_short(buf,curRound);
 	send(sock , buf , 1024, 0 );
 
@@ -401,4 +418,6 @@ void csLeave()
 
 void randDelay(us x)
 {
+  //add 2 to add at least some delay
+  usleep( 1000*((rand() % (x*2))+2));
 }
