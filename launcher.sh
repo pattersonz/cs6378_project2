@@ -3,7 +3,7 @@
 netid=zjp170130
 
 # Root directory of your project
-PROJDIR=/people/cs/z/zjp170130/cs6378_project1
+PROJDIR=/people/cs/z/zjp170130/cs6378_project2
 
 # Directory where the config file is located on your local system
 CONFIGLOCAL=config.txt
@@ -18,8 +18,10 @@ n=0
 
 cat $CONFIGLOCAL | sed -e "s/#.*//" | sed -e "/^\s*$/d" |
 (
-    read i
-    echo $i
+    read x
+    echo $x
+	xs=($x)
+	i="${xs[0]}"
     while [[ $n -lt $i ]]
     do
     	read line

@@ -134,17 +134,27 @@ void *contactProc(void* ptr)
   while(!complete)
   {
 	byte* msg = buf;
+	us messageSize;
 	char* message;
 	us clock;
 	us id;
-	read( sock , buf, 1024);
-	msg = deserialize_char_ptr(msg,&message);
+	int readTag = read( sock , buf, 1024);
+	if (readTag <= 0)
+	  break;
+	msg = deserialize_char_ptr_u(msg,&message,&messageSize);
 	msg = deserialize_u_short(msg,&clock);
 	msg = deserialize_u_short(msg,&id);
-	pthread_mutex_lock(&printLoc);
-	printf("id:%d clock:%d %s",id,clock,message);
-	pthread_mutex_unlock(&printLoc);
-	
+	if (messageSize != 0)
+	{
+	  pthread_mutex_lock(&printLoc);
+	  printf("id:%d clock:%d %s\n",id,clock,message);
+	  fflush(stdout);
+	  pthread_mutex_unlock(&printLoc);
+	}
+	serialize_u_short(buf,1);
+	send(sock , buf , 1024, 0 );  
+	if (message[0] == 'C')
+	  complete = 1;
   }
   //print results
   return (void*)0; 

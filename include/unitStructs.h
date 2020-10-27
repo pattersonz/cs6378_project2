@@ -211,6 +211,16 @@ byte *deserialize_char_ptr(byte* buf, char** c)
   return buf;
 }
 
+byte *deserialize_char_ptr_u(byte* buf, char** c, us*s)
+{
+  buf = deserialize_u_short(buf,s);
+  (*c) = (char*)malloc(*s*sizeof(char));
+  unsigned i;
+  for (i = 0; i < *s; ++i)
+	buf = deserialize_char(buf,&((*c)[i]));
+  return buf;
+}
+
 byte *deserialize_char_ptr2(byte* buf, char*** c)
 {
   us s;
