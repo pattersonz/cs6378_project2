@@ -3,7 +3,7 @@ import sys
 import re
 
 def msgOrder(x):
-    return int(x['clock'])
+    return int(x['clock'])*100+int(x['id'])
 
 def readFile(fi):
     msgs = []
@@ -28,6 +28,41 @@ def printProc(msgs, i):
             print 'id:' + m['id'] + ' clock:' + m['clock'] + ' ' + m['msg']
     return
 
+def evalMutex(msgs):
+    isIn = False
+    for m in msgs:
+        if m['msg'] == "Entering":
+            print m
+            if isIn:
+                print 'Error, mutex conflict'
+                return
+            else:
+                isIn = True
+        elif m['msg'] == "Exiting":
+            print m
+            if isIn:
+                isIn = False
+            else:
+                print 'Error exiting no mutex'
+                return
+    print 'Success!'
+    return
+
+def evalFairness(msgs):
+    queue = []
+    for m in msgs:
+        if m['msg'] == "Requesting":
+            print m
+            queue.append(m)
+            queue.sort(key=msgOrder)
+        elif m['msg'] == "Entering":
+            if m['id'] == queue[0]['id']:
+                del queue[0]
+            else:
+                print 'error got:' + m['id'] + ' expected:' + queue[0]['id']
+                return
+    print 'Success!'
+    return
 def main():
     x = ""
     msgs = []
@@ -44,7 +79,10 @@ def main():
         elif x.lower() == 'p':
             i = raw_input("Proc id:")
             i = i.strip()
-            printProc(msgs,i)
+            if i.lower() == 'x':
+                print msgs
+            else:
+                printProc(msgs,i)
         elif x.lower() == 'm':
             evalMutex(msgs)
         elif x.lower() == 'f':
