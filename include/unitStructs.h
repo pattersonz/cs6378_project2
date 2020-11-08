@@ -29,6 +29,7 @@ typedef struct origin_message
 //information to be sent from unit to unit
 typedef struct unit_message
 {
+  us request;
   us clock;
   us id;
 } UMSG;
@@ -154,6 +155,8 @@ byte *serialize_OMSG(byte* buf, OMSG o)
 
 byte *serialize_UMSG(byte* buf, UMSG u)
 {
+  //us request
+  buf = serialize_u_short(buf,u.request);
   //us count
   buf = serialize_u_short(buf,u.clock); 
   //us *ids;
@@ -256,6 +259,8 @@ byte *deserialize_OMSG(byte* buf, OMSG *o)
 
 byte *deserialize_UMSG(byte* buf, UMSG *u)
 {
+  //us request
+  buf = deserialize_u_short(buf,&(u->request));
   //us count
   buf = deserialize_u_short(buf,&(u->clock)); 
   //us *ids;

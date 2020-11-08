@@ -185,6 +185,8 @@ void *contactOrigin(void* ptr)
 	byte * msg = buf;
   	randDelay(delay);
 	attemptingEntry = 1;
+	printf("request\n");
+	fflush(stdout);
 	data = "Requesting\0";
 	msg = serialize_char_ptr(msg,data,11);
 	pthread_mutex_lock(&clockLock);
@@ -196,6 +198,8 @@ void *contactOrigin(void* ptr)
 	read(new_socket, buf, 1024);
 	csEnter();
 	msg = buf;
+	printf("entering\n");
+	fflush(stdout);
 	data = "Entering  \0";
 	msg = serialize_char_ptr(msg,data,11);
 	pthread_mutex_lock(&clockLock);
@@ -207,6 +211,8 @@ void *contactOrigin(void* ptr)
 	randDelay(exe);
 	csLeave();
 	msg = buf;
+	printf("exiting\n");
+	fflush(stdout);
 	data = "Exiting   \0";
 	msg = serialize_char_ptr(msg,data,11);
 	pthread_mutex_lock(&clockLock);
@@ -289,7 +295,14 @@ void *requester(void *ptr)
 	pthread_barrier_wait(&syncer);
 	if (!stillReqing)
 	  break;
-	serialize_u_short(buf,curRound);
+        
+	pthread_mutex_lock(&clockLock);
+	UMSG toSend;
+	toSend.request = reqClock;
+	toSend.clock = thisClock;
+	toSend.id = thisId;
+        pthread_mutex_unlock(&clockLock);
+	serialize_UMSG(buf,toSend);
 	send(sock , buf , 1024, 0 );
 
 	pthread_mutex_lock(&clockLock);
@@ -299,6 +312,13 @@ void *requester(void *ptr)
 	int readTag = read(sock, buf, 1024);
 	if (readTag <= 0)
 	  break;
+	
+	us u;
+	deserialize_u_short(buf,&u);
+	pthread_mutex_lock(&clockLock);
+	thisClock = MAX_(thisClock, u) + 1;
+	pthread_mutex_unlock(&clockLock);
+	
 //wait for all responses to be received
 	pthread_barrier_wait(&gotRes);
 	pthread_barrier_wait(&csDone);
@@ -383,22 +403,24 @@ void *handleMsg(void* ptr)
 	  break;
 	UMSG u;
 	deserialize_UMSG(buf,&u);
+	printf("req from %d ourReq:%d reqClock:%d attempt:%d\n",u.id,reqClock,u.request,attemptingEntry);
+	fflush(stdout);
+
 	byte* msg = buf;
-	msg = serialize_u_short(msg,thisClock);
 	pthread_mutex_lock(&clockLock);
-	thisClock = MAX_(thisClock + 1, u.clock);
+	thisClock = MAX_(thisClock, u.clock) + 1;
 	pthread_mutex_unlock(&clockLock);
 	
 	//if valid respond, else hold until CS section hit
-	if (attemptingEntry)
-	{
-	  if ( (u.clock > reqClock) ||
-		   (u.clock == reqClock && u.id > thisId))
-		{
-		  while (attemptingEntry)
-			;
-		}
-	}
+	while (attemptingEntry && ( (u.request > reqClock) ||
+				    (u.request == reqClock && u.id > thisId)))
+	  ;
+	
+	pthread_mutex_lock(&clockLock);
+	msg = serialize_u_short(msg,thisClock);
+	pthread_mutex_unlock(&clockLock);
+	printf("allowing %d ourReq:%d reqClock:%d attempt:%d\n",u.id,reqClock,u.request,attemptingEntry);
+	fflush(stdout);
 	send(sock , buf , 1024, 0 );
   }
 }
@@ -413,6 +435,10 @@ void csEnter()
 
 void csLeave()
 {
+  pthread_mutex_lock(&clockLock);
+  thisClock++;
+  pthread_mutex_unlock(&clockLock);
+
   pthread_barrier_wait(&csDone);
 }
 
